@@ -2,6 +2,7 @@ package com.example.administrator.coolweather;
 
 import android.app.Fragment;
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.RequiresApi;
@@ -85,8 +86,16 @@ public class ChooseAreaFragment extends Fragment {
                     selectedProvince = provinceList.get(position);//获取点击的省份
                     queryCities();//调用方法查询该省的城市
                 }else if (currentLevel == LEVEL_CITY){
-                    selectedCity = cityList.get(position);//获取点击的省份
-                    queryCounties();//调用方法查询该省的城市
+                    selectedCity = cityList.get(position);//获取点击的城市
+                    queryCounties();//调用方法查询该城市的所有县
+                }else if(currentLevel == LEVEL_COUNTY){
+                    //获取天气ID，跳转到天气界面
+                    //Log.d(TAG, "onItemClick: " + getActivity());
+                    String weatherId = countyList.get(position).getWeatherId();
+                    Intent intent = new Intent(getActivity(), WeatherActivity.class);
+                    intent.putExtra("weather_id",weatherId);
+                    startActivity(intent);
+                    getActivity().finish();
                 }
             }
         });
@@ -151,9 +160,9 @@ public class ChooseAreaFragment extends Fragment {
      * 查询选中市内所有的县，优先从数据库查询，如果没有查询到再去服务器上查询
      */
     private void queryCounties(){
-        titleText.setText(selectedCounty.getCountyName());
+        titleText.setText(selectedCity.getCityName());
         backButton.setVisibility(View.VISIBLE);//返回按钮可见
-        countyList = DataSupport.where("cityid=?",String.valueOf(selectedCity.getId())).find(County.class);//取出城市数据到集合list中
+        countyList = DataSupport.where("cityid=?",String.valueOf(selectedCity.getId())).find(County.class);//取出县数据到集合list中
         if(countyList.size()>0){//集合中有数据，取出县名称，赋值当前级别
             dataList.clear();
             for(County county:countyList){//遍历省集合
@@ -161,7 +170,7 @@ public class ChooseAreaFragment extends Fragment {
             }
             adapter.notifyDataSetChanged();//通知适配器数据发生变化，显示到界面上
             listView.setSelection(0);//指定到position[0]
-            currentLevel = LEVEL_CITY;//赋值级别
+            currentLevel = LEVEL_COUNTY;//赋值级别
         }else {//集合中没有数据
             int provinceCode = selectedProvince.getProvinceCode();//取出省代号
             int cityCode = selectedCity.getCityCode();//取出市代号
